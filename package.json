@@ -1,18 +1,27 @@
 {
   "name": "vue-canvas-editor",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "0.0.1",
   "type": "module",
+  "homepage": "https://github.com/R4GNARWR/vue-canvas-editor",
+  "author": "R4GNAR",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --config vite.config.site.ts",
+    "build": "vue-tsc -b && vite build --config vite.config.lib.ts",
+    "build:site": "vite build --config vite.config.site.ts",
     "preview": "vite preview"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
+    "@types/node": "^22.8.0",
     "fabric": "^5.4.0",
-    "vue": "^3.5.10"
+    "vue": "^3.5.10",
+    "vue-tsc": "^2.1.6"
   },
   "devDependencies": {
+    "@types/fabric": "^5.3.9",
     "@vitejs/plugin-vue": "^5.1.4",
     "sass": "^1.80.3",
     "vite": "^5.4.8"

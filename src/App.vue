@@ -1,9 +1,9 @@
 <template>
   <div>
     <Editor :textColor="textColor" />
-    <div class="">
+    <div class="text-color-editor">
       Цвет текста
-      <input type="color" v-model="textColor" @сhange="updateTextColor($event.target.value)">
+      <input type="color" v-model="textColor">
     </div>
   </div>
 </template>
@@ -12,10 +12,7 @@
 import { ref } from 'vue'
 import Editor from './components/Editor.vue'
 
-const textColor = ref('');
-const updateTextColor = (newColor: string) => {
-  textColor.value = newColor;
-};
+const textColor = ref('#000000');
 </script>
 
 <style lang="scss"></style>

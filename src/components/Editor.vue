@@ -10,17 +10,40 @@
             <button @click="addTextToCanvas">Добавить текст</button>
         </div>
         <div ref="imageBox" class="image-box">
-            <img ref="mainImage" src="/testShirt-filled.png" />
+            <img ref="mainImage" src="../../public/testShirt-filled.png" />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { fabric } from 'fabric';
-import { onMounted, onUpdated, Ref, ref, watch } from 'vue';
+import { onMounted, Ref, ref, watch, PropType } from 'vue';
 
+type ClipPathOptions = {
+    width: number,
+    height: number,
+    x: number,
+    y: number
+}
+type BaseImageOptions = {
+    x: number,
+    y: number,
+    width: number,
+    height: number
+}
 const props = defineProps({
-    textColor: { type: String, default: '#000000' }
+    textColor: {
+        type: String,
+        default: '#000000'
+    },
+    clipPathOptions: {
+        type: Object as PropType<ClipPathOptions>,
+        default: () => ({})
+    },
+    baseImageOptions: {
+        type: Object as PropType<BaseImageOptions>,
+        default: () => ({})
+    },
 })
 const imageBox: Ref<HTMLDivElement | null> = ref(null);
 const mainImage: Ref<HTMLImageElement | null> = ref(null);
@@ -60,12 +83,12 @@ const initializeFabric = async () => {
         mainImage.value.onload = () => {
             if (mainImage.value) {
                 mainImgElement.value = new fabric.Image(mainImage.value, {
-                    left: 0,
-                    top: 100,
+                    left: props.baseImageOptions.x || 0,
+                    top: props.baseImageOptions.y || 100,
                     hoverCursor: 'auto',
                 });
-                mainImgElement.value.scaleToHeight(500);
-                mainImgElement.value.scaleToWidth(700);
+                mainImgElement.value.scaleToHeight(props.baseImageOptions.height || 500);
+                mainImgElement.value.scaleToWidth(props.baseImageOptions.width || 750);
                 disableInteractions(mainImgElement.value);
                 if (canvasInstance.value) {
                     canvasInstance.value.add(mainImgElement.value);
@@ -82,10 +105,10 @@ const createClippingArea = (element: fabric.Image) => {
     const height = element.getScaledHeight() * 0.46;
 
     const clipRect = new fabric.Rect({
-        width: width,
-        height: height,
-        left: element.getCenterPoint().x - (width / 2) + 3.5,
-        top: element.getCenterPoint().y - (height / 2) - 51.5,
+        width: props.clipPathOptions.width || width,
+        height: props.clipPathOptions.height || height,
+        left: props.clipPathOptions.x || element.getCenterPoint().x - (width / 2) + 3.5,
+        top: props.clipPathOptions.y || element.getCenterPoint().y - (height / 2) - 51.5,
         absolutePositioned: true,
     })
 
@@ -98,7 +121,7 @@ const addTextToCanvas = () => {
         top: mainImgElement.value?.getCenterPoint().y || 0,
         borderColor: '#000000',
         cornerColor: '#000000',
-        fill: props.textColor,
+        fill: props.textColor ,
     })
     if (clipPath.value) {
         newText.clipPath = clipPath.value;
@@ -106,7 +129,7 @@ const addTextToCanvas = () => {
     textElements.value?.push(newText);
     if (canvasInstance.value) {
         canvasInstance.value.add(textElements.value[textElements.value.length - 1]);
-        canvasInstance.value?.bringForward(textElements.value[textElements.value.length - 1]);
+        textElements.value[textElements.value.length - 1].bringForward().bringForward();
         textElements.value[textElements.value.length - 1].on('selected', () => {
             selectedElement.value = textElements.value[textElements.value.length - 1];
         });
@@ -150,7 +173,7 @@ const addImageToCanvas = (event: Event) => {
         }
         imagesElements.value?.push(newImage);
         canvasInstance.value?.add(imagesElements.value[imagesElements.value.length - 1]);
-        imagesElements.value[imagesElements.value.length - 1].bringToFront();
+        imagesElements.value[imagesElements.value.length - 1].bringForward();
         imagesElements.value[imagesElements.value.length - 1].on('selected', () => {
             selectedElement.value = imagesElements.value[imagesElements.value.length - 1];
         });

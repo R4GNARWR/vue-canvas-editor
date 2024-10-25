@@ -1,0 +1,1 @@
+export { default as VueCanvasEditor } from './components/Editor.vue';
