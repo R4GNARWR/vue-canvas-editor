@@ -10,7 +10,7 @@
             <button @click="addTextToCanvas">Добавить текст</button>
         </div>
         <div ref="imageBox" class="image-box">
-            <img ref="mainImage" src="../../public/testShirt-filled.png" />
+            <img ref="mainImage" :src="baseImageOptions.src" v-if="baseImageOptions.src" />
         </div>
     </div>
 </template>
@@ -26,6 +26,7 @@ type ClipPathOptions = {
     y: number
 }
 type BaseImageOptions = {
+    src: string,
     x: number,
     y: number,
     width: number,
@@ -75,8 +76,8 @@ const initializeFabric = async () => {
             selectedElement.value = null;
         })
         canvasInstance.value.on('selection:updated', () => {
-            const selected = canvasInstance.value?.getActiveObject();
-            if (selected) selectedElement.value = selected;
+            const selectedObject = canvasInstance.value?.getActiveObject();
+            if (selectedObject) selectedElement.value = selectedObject;
         })
     }
     if (mainImage.value) {
@@ -121,7 +122,7 @@ const addTextToCanvas = () => {
         top: mainImgElement.value?.getCenterPoint().y || 0,
         borderColor: '#000000',
         cornerColor: '#000000',
-        fill: props.textColor ,
+        fill: props.textColor,
     })
     if (clipPath.value) {
         newText.clipPath = clipPath.value;
@@ -151,6 +152,7 @@ const addImageToCanvas = (event: Event) => {
     if (imageBox.value) {
         imageBox.value.appendChild(imageEL);
     }
+
     imageEL.onload = () => {
         const newImage = new fabric.Image(imageEL, {
             evented: true,
@@ -159,18 +161,37 @@ const addImageToCanvas = (event: Event) => {
             borderColor: '#000000',
             cornerColor: '#000000',
         });
+        if (imageEL && clipPath.value) {
+            // Получаем размеры контейнера
+            const containerWidth = clipPath.value?.getScaledWidth();
+            const containerHeight = clipPath.value?.getScaledHeight();
+
+            if (containerWidth && containerHeight) {
+                // Вычисляем коэффициенты масштабирования
+                const widthRatio = containerWidth / imageEL.clientWidth;
+                const heightRatio = containerHeight / imageEL.clientHeight;
+                const scale = Math.min(widthRatio, heightRatio);
+                if (scale) {
+                    // Масштабируем изображение
+                    newImage.scaleToHeight(imageEL.clientHeight * scale);
+                    newImage.scaleToWidth(imageEL.clientWidth * scale);
+                }
+
+            }
+        }
+
+        if (clipPath.value) {
+            newImage.clipPath = clipPath.value;
+        }
+
         if (mainImgElement.value) {
-            newImage.left = mainImgElement.value.getCenterPoint().x - newImage.getScaledWidth() / 2;
-            newImage.top = mainImgElement.value.getCenterPoint().y - newImage.getScaledHeight() / 2;
+            newImage.left = mainImgElement.value.getCenterPoint().x - (newImage.getScaledWidth() / 2);
+            newImage.top = mainImgElement.value.getCenterPoint().y - (newImage.getScaledHeight() / 2);
         } else {
             newImage.left = 0;
             newImage.top = 0;
         }
-        newImage.scaleToHeight(500);
-        newImage.scaleToWidth(700);
-        if (clipPath.value) {
-            newImage.clipPath = clipPath.value;
-        }
+
         imagesElements.value?.push(newImage);
         canvasInstance.value?.add(imagesElements.value[imagesElements.value.length - 1]);
         imagesElements.value[imagesElements.value.length - 1].bringForward();
@@ -181,9 +202,31 @@ const addImageToCanvas = (event: Event) => {
 }
 
 const deleteElement = () => {
-    if (!selectedElement.value) return;
-    canvasInstance.value?.remove(selectedElement.value);
-    selectedElement.value = null;
+    if (selectedElement.value && canvasInstance.value) {
+        if (selectedElement.value.type === 'image') {
+            const deletedElementIndex = imagesElements.value?.findIndex((el) => {
+                if (!el.ownMatrixCache || !selectedElement.value.ownMatrixCache) return false
+                if (el.ownMatrixCache?.key === selectedElement.value.ownMatrixCache?.key) return true
+                else return false
+            });
+            const deletedElement = imagesElements.value[deletedElementIndex];
+            console.log(deletedElement)
+            if (deletedElementIndex !== -1) {
+                canvasInstance.value.remove(imagesElements.value[deletedElementIndex]);
+                imagesElements.value.splice(deletedElementIndex, 1);
+            }
+        }
+        else if (selectedElement.value.type === 'textbox') {
+            const deletedElementIndex = textElements.value?.findIndex((el) => el.selected === true);
+            const deletedElement = textElements.value[deletedElementIndex];
+            if (deletedElementIndex !== -1) {
+                canvasInstance.value.remove(textElements.value[deletedElementIndex]);
+                textElements.value.splice(deletedElementIndex, 1);
+            }
+        }
+        selectedElement.value = null;
+    }
+
 }
 
 onMounted(() => {

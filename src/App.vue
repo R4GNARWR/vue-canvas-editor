@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Editor :textColor="textColor" />
+    <Editor :textColor="textColor" :baseImageOptions="{ src: '../public/testShirt-filled.png' }"/>
     <div class="text-color-editor">
       Цвет текста
       <input type="color" v-model="textColor">
